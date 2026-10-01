@@ -1,0 +1,72 @@
+#
+# Makefile for AMP2 plugins - AROS x86_64
+#
+
+AROS_SYSROOT ?= /home/serk118/work/arosbuilds_alt/toolchain-core-x86_64-build/bin/linux-x86_64/AROS/Development
+CROSS_PREFIX ?= /home/serk118/work/arosbuilds_alt/toolchain-core-x86_64/x86_64-aros-
+
+CC      = $(CROSS_PREFIX)gcc
+STRIP   = $(CROSS_PREFIX)strip
+
+DIST    = ../dist/Plugin
+
+CFLAGS  = -O2 -g -Wno-pointer-sign -fno-strict-aliasing -D__AROS__ \
+          -I../aros -I../common -I.
+
+LDFLAGS = -L$(AROS_SYSROOT)/lib -L$(AROS_SYSROOT)/newlib/lib
+LIBS    = -lamiga -lm -lz -lgcc
+
+PLUGINS = mpegv mpegvlo mpega pcm a52 cvid h263 msvc mace ima4 svq1 xanim real twos
+
+mpegv_SRCS   = slice idct motion_comp decode header mpeg2dec
+mpegv_OUT    = MPEGVX.AMP
+mpegvlo_SRCS = slice idct motion_comp decode header mpeg2dec
+mpegvlo_OUT  = MPEGVX-LO.AMP
+mpega_SRCS   = layer1 layer2 layer3 decode decode_2to1 decode_4to1 dct64 tabinit mpg123
+mpega_OUT    = MPEGAX.AMP
+pcm_SRCS     = main
+pcm_OUT      = PCM.AMP
+a52_SRCS     = bitstream imdct bit_allocate parse downmix a52dec
+a52_OUT      = A52.AMP
+cvid_SRCS    = main
+cvid_OUT     = CVID.AMP
+h263_SRCS    = common utils mpegvideo h263 jrevdct mjpeg dsputil msmpeg4 h263dec rv10 main
+h263_OUT     = H263.AMP
+msvc_SRCS    = main
+msvc_OUT     = MSVC.AMP
+mace_SRCS    = main
+mace_OUT     = MACE.AMP
+ima4_SRCS    = main
+ima4_OUT     = IMA4.AMP
+svq1_SRCS    = svq1
+svq1_OUT     = SVQ1.AMP
+xanim_SRCS   = loadelf xanim
+xanim_OUT    = XANIM.AMP
+real_SRCS    = loadelf real
+real_OUT     = REAL.AMP
+twos_SRCS    = main
+twos_OUT     = TWOS.AMP
+
+all: $(PLUGINS)
+
+define plugin_rule
+$(1)_OBJS = $$(addprefix $(1)/,$$($(1)_SRCS:=.o)) $(1)/amp_plugin.o
+
+$(1): $$($(1)_OBJS)
+	@mkdir -p $(DIST)
+	$$(CC) -o $(DIST)/$$($(1)_OUT) $$($(1)_OBJS) $$(LDFLAGS) $$(LIBS)
+	$$(STRIP) --strip-debug $(DIST)/$$($(1)_OUT) 2>/dev/null || true
+
+$(1)/amp_plugin.o: ../common/plugin.c
+	$$(CC) $$(CFLAGS) -I$(1) -c -o $$@ $$<
+
+$(1)/%.o: $(1)/%.c
+	$$(CC) $$(CFLAGS) -I$(1) -c -o $$@ $$<
+endef
+
+$(foreach p,$(PLUGINS),$(eval $(call plugin_rule,$(p))))
+
+clean:
+	rm -f */*.o $(DIST)/*.AMP
+
+.PHONY: all clean

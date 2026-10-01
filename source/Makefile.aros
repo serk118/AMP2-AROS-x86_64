@@ -1,0 +1,75 @@
+#
+# Makefile for AMP2 - AROS x86_64
+#
+
+AROS_SYSROOT ?= /home/serk118/work/arosbuilds_alt/toolchain-core-x86_64-build/bin/linux-x86_64/AROS/Development
+CROSS_PREFIX ?= /home/serk118/work/arosbuilds_alt/toolchain-core-x86_64/x86_64-aros-
+
+CC      = $(CROSS_PREFIX)gcc
+STRIP   = $(CROSS_PREFIX)strip
+
+CFLAGS  = -O2 -g -Wno-pointer-sign -fno-strict-aliasing \
+          -D__AROS__ -DAMIGA \
+          -Iaros -Iamigaos -Iaudio -Icommon -Imain \
+          -Iparser -Iparser/dvd -Iparser/dvd/dvdnav -Iparser/dvd/dvdread \
+          -Iparser/mpeg -Iparser/vcd -Iparser/qt -Iplugin -Irefresh
+
+LDFLAGS = -L$(AROS_SYSROOT)/lib -L$(AROS_SYSROOT)/newlib/lib
+LIBS    = -lamiga -lm -lz -lgcc
+
+EXE     = AMP
+
+# Objects
+
+AROSFILES = aros/arossupport.o
+
+AMIGAOS = amigaos/aga.o amigaos/cgfx.o amigaos/video.o amigaos/req.o amigaos/font.o
+
+AUDIO = audio/ahi.o audio/audio_main.o audio/paula.o audio/paula_int.o
+
+COMMON = common/amp.o common/find_plugin.o common/core.o common/ampio.o
+
+MAIN = main/main.o main/prefs.o main/plugin.o main/types.o main/keyfile.o main/buffer.o \
+main/version.o main/mpegio.o main/mount.o
+
+REFRESH = refresh/refresh.o refresh/osd.o refresh/subtitle.o \
+refresh/yuv2ham6.o refresh/yuv2ham8.o refresh/yuv2aga.o refresh/yuv2rgb.o \
+refresh/yuv2gray.o refresh/yuv2lut.o refresh/yuv2win.o refresh/yuv2overlay.o \
+refresh/argb2ham6.o refresh/argb2ham8.o refresh/argb2aga.o refresh/argb2rgb.o \
+refresh/argb2gray.o refresh/argb2lut.o refresh/argb2win.o refresh/argb2overlay.o \
+refresh/lut2aga.o refresh/lut2rgb.o refresh/lut2gray.o refresh/lut2lut.o \
+refresh/lut2win.o refresh/lut2overlay.o
+
+DVD = parser/dvd/dvdnav/decoder.o parser/dvd/dvdnav/dvdnav.o parser/dvd/dvdnav/vm.o \
+parser/dvd/dvdnav/vmcmd.o parser/dvd/dvdnav/read_cache.o parser/dvd/dvdnav/navigation.o \
+parser/dvd/dvdnav/highlight.o parser/dvd/dvdnav/searching.o parser/dvd/dvdnav/settings.o \
+parser/dvd/dvdread/ifo_read.o parser/dvd/dvdread/nav_read.o parser/dvd/dvdread/dvd_udf.o \
+parser/dvd/dvdread/dvd_reader.o \
+parser/dvd/dvdcss/decss.o parser/dvd/dvdcss/dvd.o parser/dvd/dvdcss/css-auth.o \
+parser/dvd/dvdcss/findkey.o \
+parser/dvd/dvd_main.o parser/dvd/spu.o
+
+PARSER = parser/rm/rm.o parser/avi/avi.o parser/stream/stream.o parser/mpeg/mpeg.o \
+parser/vcd/vcd.o \
+parser/qt/quicktime.o parser/qt/atom.o parser/qt/mdat.o parser/qt/moov.o parser/qt/mvhd.o \
+parser/qt/matrix.o parser/qt/trak.o parser/qt/stco.o parser/qt/stsz.o parser/qt/stsc.o \
+parser/qt/mdia.o parser/qt/tkhd.o parser/qt/edts.o parser/qt/minf.o parser/qt/hdlr.o \
+parser/qt/mdhd.o parser/qt/vmhd.o parser/qt/smhd.o parser/qt/dinf.o parser/qt/stbl.o \
+parser/qt/stsd.o parser/qt/stts.o parser/qt/stss.o parser/qt/udta.o parser/qt/ctab.o \
+parser/qt/elst.o parser/qt/dref.o parser/qt/stsdtable.o parser/qt/util.o parser/qt/qt.o
+
+OBJS = $(MAIN) $(AROSFILES) $(AMIGAOS) $(COMMON) $(AUDIO) $(REFRESH) $(DVD) $(PARSER)
+
+all: $(EXE)
+
+$(EXE): $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
+	$(STRIP) --strip-debug $@ 2>/dev/null || true
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f $(OBJS) $(EXE)
+
+.PHONY: all clean

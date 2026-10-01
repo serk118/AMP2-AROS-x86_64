@@ -1,0 +1,29 @@
+#
+# Makefile for AMP2-GUI - AROS x86_64
+#
+
+AROS_SYSROOT ?= /home/serk118/work/arosbuilds_alt/toolchain-core-x86_64-build/bin/linux-x86_64/AROS/Development
+CROSS_PREFIX ?= /home/serk118/work/arosbuilds_alt/toolchain-core-x86_64/x86_64-aros-
+
+CC      = $(CROSS_PREFIX)gcc
+STRIP   = $(CROSS_PREFIX)strip
+
+CFLAGS  = -O2 -g -Wno-pointer-sign -fno-strict-aliasing -D__AROS__
+LDFLAGS = -L$(AROS_SYSROOT)/lib -L$(AROS_SYSROOT)/newlib/lib
+LIBS    = -lamiga -lm -lz -lgcc
+
+EXE     = AMP2-GUI
+
+all: $(EXE)
+
+$(EXE): amp2-gui.o
+	$(CC) -o $@ $< $(LDFLAGS) $(LIBS)
+	$(STRIP) --strip-debug $@ 2>/dev/null || true
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f *.o $(EXE)
+
+.PHONY: all clean
